@@ -6,55 +6,76 @@ export async function analyzeBloodReport(reportText) {
     try {
         console.log(`Analyzing blood report with Gemini model: ${modelName}...`);
         
-        const response = await ai.models.generateContent({
-            model: modelName,
-            contents: `Analyze this blood report text and extract patient details, generate an AI summary, and extract all biomarkers with their reference ranges and status: \n\n ${reportText}`,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        patientDetails: {
+        let response;
+        const modelsToAttempt = [modelName, 'gemini-3.5-flash-lite'];
+
+        for (const candidateModel of modelsToAttempt) {
+            try {
+                response = await ai.models.generateContent({
+                    model: candidateModel,
+                    contents: `Analyze this blood report text and extract patient details, generate an AI summary, and extract all biomarkers with their reference ranges and status: \n\n ${reportText}`,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
                             type: Type.OBJECT,
                             properties: {
-                                name: { type: Type.STRING },
-                                age: { type: Type.STRING },
-                                gender: { type: Type.STRING },
-                                reportDate: { type: Type.STRING }
-                            },
-                            required: ["name", "age", "gender", "reportDate"]
-                        },
-                        aiSummary: {
-                            type: Type.STRING
-                        },
-                        biomarkers: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    value: { type: Type.STRING },
-                                    unit: { type: Type.STRING },
-                                    range: {
+                                patientDetails: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        name: { type: Type.STRING },
+                                        age: { type: Type.STRING },
+                                        gender: { type: Type.STRING },
+                                        reportDate: { type: Type.STRING }
+                                    },
+                                    required: ["name", "age", "gender", "reportDate"]
+                                },
+                                aiSummary: {
+                                    type: Type.STRING
+                                },
+                                biomarkers: {
+                                    type: Type.ARRAY,
+                                    items: {
                                         type: Type.OBJECT,
                                         properties: {
-                                            min: { type: Type.STRING },
-                                            max: { type: Type.STRING },
-                                            rawText: { type: Type.STRING }
+                                            name: { type: Type.STRING },
+                                            value: { type: Type.STRING },
+                                            unit: { type: Type.STRING },
+                                            range: {
+                                                type: Type.OBJECT,
+                                                properties: {
+                                                    min: { type: Type.STRING },
+                                                    max: { type: Type.STRING },
+                                                    rawText: { type: Type.STRING }
+                                                },
+                                                required: ["min", "max"]
+                                            },
+                                            status: { type: Type.STRING, enum: ["Normal", "High", "Low"] },
+                                            comparisonText: { type: Type.STRING }
                                         },
-                                        required: ["min", "max"]
-                                    },
-                                    status: { type: Type.STRING, enum: ["Normal", "High", "Low"] },
-                                    comparisonText: { type: Type.STRING }
-                                },
-                                required: ["name", "value", "unit", "range", "status"]
-                            }
+                                        required: ["name", "value", "unit", "range", "status"]
+                                    }
+                                }
+                            },
+                            required: ["patientDetails", "aiSummary", "biomarkers"]
                         }
-                    },
-                    required: ["patientDetails", "aiSummary", "biomarkers"]
+                    }
+                });
+                if (response && response.text) break;
+            } catch (modelErr) {
+                const isTransient = modelErr.message && (
+                    modelErr.message.includes('503') || 
+                    modelErr.message.includes('high demand') ||
+                    modelErr.message.includes('429') ||
+                    modelErr.message.includes('RESOURCE_EXHAUSTED')
+                );
+                if (isTransient && candidateModel === modelName) {
+                    console.warn(`[Gemini] ${candidateModel} is experiencing temporary high demand (503). Retrying with fallback model...`);
+                    await new Promise(r => setTimeout(r, 1200));
+                    continue;
                 }
+                throw modelErr;
             }
-        });
+        }
 
         if (!response || !response.text) {
             throw new Error("Empty response received from Gemini AI");

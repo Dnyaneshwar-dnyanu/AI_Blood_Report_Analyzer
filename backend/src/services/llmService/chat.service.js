@@ -116,33 +116,54 @@ RESPONSE GUIDELINES & ADAPTIVE STRUCTURE:
 
         console.log(`Generating chat response with model: ${modelName}...`);
 
-        const response = await ai.models.generateContent({
-            model: modelName,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        answer: {
-                            type: Type.STRING,
-                            description: "The empathetic, clear, markdown-formatted response."
-                        },
-                        guidance: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                            description: "List of general lifestyle pointers (nutrition, hydration, activity, sleep) if relevant; empty array if not applicable."
-                        },
-                        followUpQuestions: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING },
-                            description: "2-3 short, personalized follow-up questions for the user to explore next."
+        let response;
+        const modelsToAttempt = [modelName, 'gemini-3.5-flash-lite'];
+
+        for (const candidateModel of modelsToAttempt) {
+            try {
+                response = await ai.models.generateContent({
+                    model: candidateModel,
+                    contents: prompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                answer: {
+                                    type: Type.STRING,
+                                    description: "The empathetic, clear, markdown-formatted response."
+                                },
+                                guidance: {
+                                    type: Type.ARRAY,
+                                    items: { type: Type.STRING },
+                                    description: "List of general lifestyle pointers (nutrition, hydration, activity, sleep) if relevant; empty array if not applicable."
+                                },
+                                followUpQuestions: {
+                                    type: Type.ARRAY,
+                                    items: { type: Type.STRING },
+                                    description: "2-3 short, personalized follow-up questions for the user to explore next."
+                                }
+                            },
+                            required: ["answer", "followUpQuestions"]
                         }
-                    },
-                    required: ["answer", "followUpQuestions"]
+                    }
+                });
+                if (response && response.text) break;
+            } catch (modelErr) {
+                const isTransient = modelErr.message && (
+                    modelErr.message.includes('503') || 
+                    modelErr.message.includes('high demand') ||
+                    modelErr.message.includes('429') ||
+                    modelErr.message.includes('RESOURCE_EXHAUSTED')
+                );
+                if (isTransient && candidateModel === modelName) {
+                    console.warn(`[Gemini] ${candidateModel} is experiencing temporary high demand (503). Retrying once with fallback model...`);
+                    await new Promise(r => setTimeout(r, 1200));
+                    continue;
                 }
+                throw modelErr;
             }
-        });
+        }
 
         if (!response || !response.text) {
             throw new Error("Empty response received from Gemini");

@@ -28,10 +28,22 @@ const reportSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    isDraft: {
+        type: Boolean,
+        default: false
+    },
     biomarkers: [{
         name: {
             type: String,
             required: true
+        },
+        normalizedKey: {
+            type: String,
+            default: ""
+        },
+        category: {
+            type: String,
+            default: "Other"
         },
         value: {
             type: mongoose.Schema.Types.Mixed,
@@ -59,6 +71,19 @@ const reportSchema = new mongoose.Schema({
             type: String,
             enum: ["Normal", "High", "Low"],
             default: "Normal"
+        },
+        confidence: {
+            type: String,
+            enum: ["high", "medium", "low"],
+            default: "high"
+        },
+        uncertainFlag: {
+            type: Boolean,
+            default: false
+        },
+        uncertaintyReason: {
+            type: String,
+            default: ""
         },
         comparisonText: {
             type: String,

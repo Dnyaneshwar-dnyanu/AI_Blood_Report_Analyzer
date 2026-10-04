@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import api from "../api/axios";
 import { toast } from "react-toastify";
+import ExtractionReview from "../components/ExtractionReview";
 
 export default function UploadPage() {
   const fileInputRef = useRef(null);
@@ -19,6 +20,7 @@ export default function UploadPage() {
 
   const [status, setStatus] = useState("idle");
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [extractedReport, setExtractedReport] = useState(null);
 
   const uploadTheFile = async (file) => {
     if (!file) return;
@@ -43,9 +45,15 @@ export default function UploadPage() {
 
       if (response.success) {
         localStorage.setItem("activeReportId", response.data._id);
+        const existing = JSON.parse(localStorage.getItem("guestReportIds") || "[]");
+        if (!existing.includes(response.data._id)) {
+          existing.unshift(response.data._id);
+          localStorage.setItem("guestReportIds", JSON.stringify(existing));
+        }
 
-        setStatus("success");
-        toast.success("Report analyzed successfully!");
+        setExtractedReport(response.data);
+        setStatus("review");
+        toast.success("Extraction complete! Please review and verify values.");
       } else {
         throw new Error(
           response.message || "Report processing failed."
@@ -127,7 +135,27 @@ export default function UploadPage() {
 
 
   return (
-    <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    <div
+      className={`mx-auto rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 transition-all duration-300 ${
+        status === "review" ? "max-w-5xl" : "max-w-3xl"
+      }`}
+    >
+
+      {/* ============================= */}
+      {/* REVIEW & VALIDATE EXTRACTION */}
+      {/* ============================= */}
+
+      {status === "review" && extractedReport && (
+        <ExtractionReview
+          initialData={extractedReport}
+          reportId={extractedReport._id}
+          onConfirmed={(confirmedData) => {
+            setExtractedReport(confirmedData);
+            setStatus("success");
+          }}
+          onCancel={handleTryAgain}
+        />
+      )}
 
       {/* ============================= */}
       {/* IDLE STATE */}

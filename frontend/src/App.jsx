@@ -5,6 +5,8 @@ import UploadPage from './pages/UploadPage';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import ChatPage from './pages/ChatPage';
+import ReportHistoryPage from './pages/ReportHistoryPage';
+import CompareReportsPage from './pages/CompareReportsPage';
 import Footer from './components/Footer';
 
 function App() {
@@ -17,6 +19,8 @@ function App() {
             <Route path="/" element={<Navigate to="/upload" replace />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/history" element={<ReportHistoryPage />} />
+            <Route path="/compare" element={<CompareReportsPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="*" element={<Navigate to="/upload" replace />} />
           </Routes>

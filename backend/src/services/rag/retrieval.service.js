@@ -18,8 +18,8 @@ export default async function retrieveContext(query, k = 5) {
     try {
         if (!query || query.trim().length === 0) return [];
 
-        // console.log(`Generating query embedding vector for query: "${query}"...`);
-        // const queryVector = await generateEmbedding(query);
+        console.log(`Generating query embedding vector for query: "${query}"...`);
+        const queryVector = await generateEmbedding(query);
 
         try {
             // Attempt MongoDB Atlas Vector Search

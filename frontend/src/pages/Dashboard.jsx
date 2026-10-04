@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   User,
   Calendar,
@@ -11,15 +11,33 @@ import {
   Sparkles,
   CheckCircle2,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Search,
+  Filter,
+  Layers,
+  BookOpen
 } from "lucide-react";
 import PatientDetail from "../components/PatientDetail";
 import BiomarkerCard from "../components/BiomarkerCard";
 import RangeGraph from "../components/RangeGraph";
+import BiomarkerExplainerDrawer from "../components/BiomarkerExplainerDrawer";
 import defaultReport from "../data/defaultReport";
 import api from "../api/axios";
 
+const DASHBOARD_CATEGORIES = [
+  "All",
+  "CBC",
+  "Lipids",
+  "Metabolic",
+  "Kidney",
+  "Liver",
+  "Thyroid",
+  "Vitamins",
+  "Other"
+];
+
 export default function Dashboard() {
+  const [searchParams] = useSearchParams();
   const [patientDetails, setPatientDetails] = useState(defaultReport.patientDetails);
   const [aiSummary, setAiSummary] = useState(defaultReport.aiSummary);
   const [biomarkers, setBiomarkers] = useState(defaultReport.biomarkers);
@@ -27,12 +45,23 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("cards"); // "cards" | "graphs"
   const [reportId, setReportId] = useState(null);
 
+  // New filtering & explainer states
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [onlyAbnormal, setOnlyAbnormal] = useState(false);
+  const [explainingBiomarker, setExplainingBiomarker] = useState(null);
+
   useEffect(() => {
     async function fetchReport() {
-      const storedId = localStorage.getItem('activeReportId');
+      // Support query param ?id=... or fallback to localStorage
+      const queryId = searchParams.get("id");
+      const storedId = queryId || localStorage.getItem('activeReportId');
       if (!storedId) return;
 
       setReportId(storedId);
+      if (queryId) {
+        localStorage.setItem('activeReportId', queryId);
+      }
 
       try {
         const response = await api.get(`/api/report/${storedId}`);
@@ -57,7 +86,7 @@ export default function Dashboard() {
     }
 
     fetchReport();
-  }, []);
+  }, [searchParams]);
 
   const abnormalBiomarkers = biomarkers.filter(b => b.status === "High" || b.status === "Low");
   const abnormalCount = abnormalBiomarkers.length;
@@ -256,59 +285,132 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* Biomarker Overview & Range Graph Toggle */}
+        {/* Biomarker Overview & Filtering Controls */}
         <section>
+          <div className="mb-6 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  Biomarker Analysis ({biomarkers.length} of {biomarkers.length})
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Detailed comparison against clinical reference ranges with instant medical term explanations.
+                </p>
+              </div>
 
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-bold text-slate-900">
-                Biomarker Analysis ({biomarkers.length})
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Detailed comparison against clinical reference ranges.
-              </p>
+              <div className="flex items-center gap-3">
+                {/* View Mode Toggle */}
+                <div className="flex items-center rounded-xl bg-slate-200/60 p-1">
+                  <button
+                    onClick={() => setActiveTab("cards")}
+                    className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                      activeTab === "cards"
+                        ? "bg-white text-slate-900 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Card View
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("graphs")}
+                    aria-label="Graph View"
+                    className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                      activeTab === "graphs"
+                        ? "bg-white text-slate-900 shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <BarChart2 className="h-3.5 w-3.5 text-blue-600" />
+                    Range Gauges
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center rounded-xl bg-slate-200/60 p-1 self-start sm:self-auto">
+            {/* Search and Filters Toolbar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search biomarker (e.g. Hemoglobin, Glucose, ALT)..."
+                  className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-blue-500 shadow-2xs"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Only Abnormal Toggle */}
               <button
-                onClick={() => setActiveTab("cards")}
-                className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition ${
-                  activeTab === "cards"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                onClick={() => setOnlyAbnormal(!onlyAbnormal)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                  onlyAbnormal
+                    ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 }`}
               >
-                Card View
+                <AlertCircle className="h-3.5 w-3.5" />
+                <span>Out of Range Only ({abnormalCount})</span>
               </button>
-              <button
-                onClick={() => setActiveTab("graphs")}
-                aria-label="Graph View"
-                className={`flex items-center gap-1.5 rounded-lg px-4 py-1.5 text-xs font-semibold transition ${
-                  activeTab === "graphs"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <BarChart2 className="h-3.5 w-3.5 text-blue-600" />
-                Range Graphs
-              </button>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {DASHBOARD_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition ${
+                    selectedCategory === cat
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
           </div>
 
-
           {/* Render Cards or Graphs */}
-          {activeTab === "cards" ? (
+          {biomarkers.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center">
+              <Layers className="h-10 w-10 text-slate-300 mx-auto mb-3" />
+              <p className="text-sm font-bold text-slate-700">No biomarkers matched your filters</p>
+              <p className="text-xs text-slate-400 mt-1">Try clearing your search query or choosing another category.</p>
+              <button
+                onClick={() => {
+                  setSelectedCategory("All");
+                  setSearchQuery("");
+                  setOnlyAbnormal(false);
+                }}
+                className="mt-4 rounded-xl bg-blue-50 px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-100 transition"
+              >
+                Reset All Filters
+              </button>
+            </div>
+          ) : activeTab === "cards" ? (
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {biomarkers.map((biomarker, index) => (
                 <BiomarkerCard
                   key={index}
                   name={biomarker.name}
+                  category={biomarker.category}
                   value={biomarker.value}
                   unit={biomarker.unit}
                   range={biomarker.range}
                   status={biomarker.status}
                   comparisionText={biomarker.comparisonText}
+                  onExplain={(marker) => setExplainingBiomarker(marker)}
                 />
               ))}
             </div>
@@ -327,9 +429,15 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-
         </section>
       </main>
+
+      {/* RAG Medical Term Explainer Drawer */}
+      <BiomarkerExplainerDrawer
+        isOpen={!!explainingBiomarker}
+        onClose={() => setExplainingBiomarker(null)}
+        biomarker={explainingBiomarker}
+      />
     </div>
   );
 }

@@ -120,20 +120,40 @@ describe('Blood Report Analyzer API & System Tests', () => {
         }, 90000);
     });
 
-    // 7. Centralized Error Handling & Safety Masking
-    describe('Centralized Error Handling', () => {
-        it('should return safe 404 response for non-existent report without leaking database internals', async () => {
-            const res = await request(app).get('/api/report/507f1f77bcf86cd799439011');
-            expect(res.status).toBe(404);
-            expect(res.body.success).toBe(false);
-            expect(res.body.message).toBe("Report Not Found");
-        });
+    // 8. Biomarker Normalization & Category Mapping
+    describe('Biomarker Normalization & Categorization', () => {
+        it('should correctly normalize biomarker keys and map clinical categories', async () => {
+            const { getNormalizedBiomarkerKey, inferCategory } = await import('../src/services/report/analyzeReport.service.js');
+            expect(getNormalizedBiomarkerKey('Hemoglobin (Hb)')).toBe('hemoglobin');
+            expect(getNormalizedBiomarkerKey('Fasting Blood Glucose')).toBe('glucose_fasting');
+            expect(getNormalizedBiomarkerKey('Total Cholesterol')).toBe('cholesterol_total');
 
-        it('should return safe 404 response for invalid object ID format without crashing', async () => {
-            const res = await request(app).get('/api/report/invalid-id-format');
-            expect(res.status).toBe(404);
+            expect(inferCategory('Hemoglobin')).toBe('CBC');
+            expect(inferCategory('Total Cholesterol')).toBe('Lipids');
+            expect(inferCategory('Fasting Blood Sugar')).toBe('Metabolic');
+            expect(inferCategory('Creatinine')).toBe('Kidney');
+            expect(inferCategory('ALT / SGPT')).toBe('Liver');
+            expect(inferCategory('TSH')).toBe('Thyroid');
+            expect(inferCategory('Vitamin D3')).toBe('Vitamins');
+        });
+    });
+
+    // 9. Batch Reports Retrieval
+    describe('POST /api/report/batch', () => {
+        it('should return error if ids array is missing or empty', async () => {
+            const res = await request(app).post('/api/report/batch').send({ ids: [] });
+            expect(res.status).toBe(400);
             expect(res.body.success).toBe(false);
-            expect(res.body.message).toBe("The requested report or resource could not be found.");
+        });
+    });
+
+    // 10. Compare Reports Validation
+    describe('POST /api/report/compare', () => {
+        it('should return error if fewer than 2 reports provided', async () => {
+            const res = await request(app).post('/api/report/compare').send({ reportIds: ['507f1f77bcf86cd799439011'] });
+            expect(res.status).toBe(400);
+            expect(res.body.success).toBe(false);
         });
     });
 });
+

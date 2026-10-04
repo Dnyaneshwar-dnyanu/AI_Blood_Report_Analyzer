@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, ShieldCheck, Upload, LayoutDashboard, MessageSquare, LogIn, LogOut, User } from 'lucide-react';
+import { 
+    Activity, 
+    ShieldCheck, 
+    Upload, 
+    LayoutDashboard, 
+    MessageSquare, 
+    LogIn, 
+    LogOut, 
+    User,
+    FolderClock,
+    GitCompare,
+    Eye,
+    EyeOff
+} from 'lucide-react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 
@@ -11,6 +24,9 @@ function Navbar() {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isLogin, setIsLogin] = useState(true);
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [privacyMask, setPrivacyMask] = useState(() => {
+        return localStorage.getItem("privacyMaskEnabled") === "true";
+    });
 
     useEffect(() => {
         const storedUser = localStorage.getItem('userData');
@@ -21,7 +37,21 @@ function Navbar() {
                 localStorage.removeItem('userData');
             }
         }
+
+        const handleMaskChange = () => {
+            setPrivacyMask(localStorage.getItem("privacyMaskEnabled") === "true");
+        };
+        window.addEventListener("privacyMaskChanged", handleMaskChange);
+        return () => window.removeEventListener("privacyMaskChanged", handleMaskChange);
     }, []);
+
+    const togglePrivacy = () => {
+        const next = !privacyMask;
+        setPrivacyMask(next);
+        localStorage.setItem("privacyMaskEnabled", String(next));
+        window.dispatchEvent(new Event("privacyMaskChanged"));
+        toast.info(next ? "PII masking enabled on screen" : "PII masking disabled");
+    };
 
     const handleAuthSubmit = async (e) => {
         e.preventDefault();
@@ -79,22 +109,44 @@ function Navbar() {
                     <div className="flex items-center gap-1 sm:gap-2">
                         <Link to="/upload" className={navLinkClass('/upload')}>
                             <Upload className="h-4 w-4" />
-                            <span className="hidden sm:inline">Upload</span>
+                            <span className="hidden md:inline">Upload</span>
                         </Link>
 
                         <Link to="/dashboard" className={navLinkClass('/dashboard')}>
                             <LayoutDashboard className="h-4 w-4" />
-                            <span className="hidden sm:inline">Dashboard</span>
+                            <span className="hidden md:inline">Dashboard</span>
+                        </Link>
+
+                        <Link to="/history" className={navLinkClass('/history')}>
+                            <FolderClock className="h-4 w-4" />
+                            <span className="hidden md:inline">Reports</span>
+                        </Link>
+
+                        <Link to="/compare" className={navLinkClass('/compare')}>
+                            <GitCompare className="h-4 w-4" />
+                            <span className="hidden md:inline">Compare</span>
                         </Link>
 
                         <Link to="/chat" className={navLinkClass('/chat')}>
                             <MessageSquare className="h-4 w-4" />
-                            <span className="hidden sm:inline">AI Chat</span>
+                            <span className="hidden md:inline">AI Chat</span>
                         </Link>
                     </div>
 
-                    {/* User Auth Actions */}
-                    <div className="flex items-center gap-3">
+                    {/* Right Toolbar: Privacy Mask + Auth */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* PII Privacy Toggle */}
+                        <button
+                            onClick={togglePrivacy}
+                            className={`p-2 rounded-xl border transition ${
+                                privacyMask
+                                    ? "bg-amber-50 text-amber-700 border-amber-200 shadow-2xs"
+                                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                            }`}
+                            title={privacyMask ? "PII Masking is Active" : "Click to Mask Patient PII"}
+                        >
+                            {privacyMask ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                         {user ? (
                             <div className="flex items-center gap-2">
                                 <span className="hidden md:inline-block text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full">

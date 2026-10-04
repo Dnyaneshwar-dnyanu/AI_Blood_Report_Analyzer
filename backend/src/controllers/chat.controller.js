@@ -1,5 +1,6 @@
 import getResponseForQueryService from "../services/llmService/chat.service.js";
 import Conversation from "../models/Conversation.model.js";
+import explainBiomarker from "../services/llmService/termExplainer.service.js";
 
 export async function getResponseForQuery(req, res) {
     try {
@@ -111,5 +112,20 @@ export async function getChatHistory(req, res) {
             success: false, 
             message: "Unable to retrieve chat history at this time." 
         });
+    }
+}
+
+export async function explainTerm(req, res) {
+    try {
+        const term = req.params.term || req.body.term || req.query.term;
+        if (!term || term.trim().length === 0) {
+            return res.status(400).json({ success: false, message: "Please specify a biomarker term to explain." });
+        }
+
+        const explanation = await explainBiomarker(term.trim());
+        return res.status(200).json({ success: true, data: explanation });
+    } catch (error) {
+        console.error("Explain Term Error:", error);
+        return res.status(500).json({ success: false, message: "Unable to explain term at this time." });
     }
 }

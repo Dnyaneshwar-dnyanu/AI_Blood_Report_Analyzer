@@ -1,7 +1,11 @@
 import processReport from "../services/report/upload.service.js";
 import fs from 'fs';
 import ReportModel from "../models/Report.model.js";
+import Conversation from "../models/Conversation.model.js";
 import { detectReportImbalances } from "../services/report/guidance.service.js";
+import { inferCategory, getNormalizedBiomarkerKey } from "../services/report/analyzeReport.service.js";
+import { compareReports } from "../services/report/comparison.service.js";
+import { generateComparisonInsights } from "../services/report/comparisonInsight.service.js";
 
 async function getReport(req, res, next) {
     const reportId = req.params.id;
@@ -60,6 +64,7 @@ async function uploadReport(req, res, next) {
 
         const newReportData = await ReportModel.create({
             ...result,
+            isDraft: false,
             userId: req.user ? req.user._id : null
         });
 
@@ -85,6 +90,130 @@ async function uploadReport(req, res, next) {
     }
 }
 
+async function updateReport(req, res, next) {
+    const reportId = req.params.id;
+    const { patientDetails, biomarkers, aiSummary } = req.body;
+
+    try {
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+
+        // Ownership check
+        if (req.user && report.userId && report.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Unauthorized to update this report" });
+        }
+
+        if (patientDetails) {
+            report.patientDetails = {
+                name: patientDetails.name ?? report.patientDetails?.name,
+                age: patientDetails.age ?? report.patientDetails?.age,
+                gender: patientDetails.gender ?? report.patientDetails?.gender,
+                reportDate: patientDetails.reportDate ?? report.patientDetails?.reportDate
+            };
+        }
+
+        if (aiSummary) {
+            report.aiSummary = aiSummary;
+        }
+
+        if (Array.isArray(biomarkers)) {
+            report.biomarkers = biomarkers.map(b => {
+                const numVal = parseFloat(b.value);
+                const numMin = parseFloat(b.range?.min);
+                const numMax = parseFloat(b.range?.max);
+
+                let status = b.status || "Normal";
+                if (!isNaN(numVal) && !isNaN(numMin) && !isNaN(numMax)) {
+                    if (numVal < numMin) status = "Low";
+                    else if (numVal > numMax) status = "High";
+                    else status = "Normal";
+                }
+
+                return {
+                    name: b.name || "Unnamed Biomarker",
+                    category: b.category || inferCategory(b.name || ""),
+                    normalizedKey: b.normalizedKey || getNormalizedBiomarkerKey(b.name || ""),
+                    value: isNaN(numVal) ? (b.value ?? "—") : numVal,
+                    unit: b.unit || "",
+                    range: {
+                        min: isNaN(numMin) ? (b.range?.min ?? "-") : numMin,
+                        max: isNaN(numMax) ? (b.range?.max ?? "-") : numMax,
+                        rawText: b.range?.rawText || `${b.range?.min ?? ''} - ${b.range?.max ?? ''}`
+                    },
+                    status,
+                    confidence: b.confidence || "high",
+                    uncertainFlag: b.uncertainFlag === true,
+                    uncertaintyReason: b.uncertaintyReason || "",
+                    comparisonText: b.comparisonText || `Compared with reference range ${b.range?.min ?? ''}-${b.range?.max ?? ''}`
+                };
+            });
+        }
+
+        report.isDraft = false;
+        await report.save();
+
+        return res.status(200).json({
+            success: true,
+            data: report,
+            message: "Report updated successfully"
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function deleteReport(req, res, next) {
+    const reportId = req.params.id;
+    try {
+        const report = await ReportModel.findById(reportId);
+        if (!report) {
+            return res.status(404).json({ success: false, message: "Report not found" });
+        }
+
+        // Ownership check
+        if (req.user && report.userId && report.userId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ success: false, message: "Unauthorized to delete this report" });
+        }
+
+        await ReportModel.findByIdAndDelete(reportId);
+
+        // Cascade delete conversations linked to this report
+        try {
+            await Conversation.deleteMany({ reportId });
+        } catch (convErr) {
+            console.warn("Could not delete associated conversations:", convErr.message);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Report deleted successfully"
+        });
+
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function getBatchReports(req, res, next) {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, message: "Valid report IDs array is required" });
+        }
+
+        const query = { _id: { $in: ids } };
+        // If user logged in, allow their own reports plus any requested IDs matching
+        const reports = await ReportModel.find(query).sort({ createdAt: -1 });
+
+        return res.status(200).json({ success: true, data: reports });
+    } catch (error) {
+        next(error);
+    }
+}
+
 async function getUserReports(req, res, next) {
     try {
         if (!req.user) {
@@ -97,4 +226,48 @@ async function getUserReports(req, res, next) {
     }
 }
 
-export { uploadReport, getReport, getReportGuidance, getUserReports };
+async function compareReportsController(req, res, next) {
+    try {
+        const { reportIds } = req.body;
+        if (!Array.isArray(reportIds) || reportIds.length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select at least 2 reports to compare."
+            });
+        }
+
+        const result = await compareReports(reportIds);
+        return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function getComparisonInsightsController(req, res, next) {
+    try {
+        const { reportIds } = req.body;
+        if (!Array.isArray(reportIds) || reportIds.length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select at least 2 reports to generate insights."
+            });
+        }
+
+        const result = await generateComparisonInsights(reportIds);
+        return res.status(200).json({ success: true, data: result });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export {
+    uploadReport,
+    getReport,
+    getReportGuidance,
+    getUserReports,
+    updateReport,
+    deleteReport,
+    getBatchReports,
+    compareReportsController,
+    getComparisonInsightsController
+};

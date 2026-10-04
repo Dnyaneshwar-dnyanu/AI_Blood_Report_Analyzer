@@ -79,57 +79,68 @@ function Navbar() {
     };
 
     const navLinkClass = (path) => `
-        flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition
+        relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200
         ${location.pathname === path 
-            ? 'bg-blue-50 text-blue-600 font-semibold' 
-            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20' 
+            : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'}
     `;
 
     return (
         <>
-            <nav className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3.5">
+            <nav className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl transition-all duration-200 shadow-2xs">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
 
                     {/* Logo */}
-                    <Link to="/upload" className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-sm">
-                            <Activity className="h-5 w-5 text-white" />
+                    <Link to="/upload" className="group flex items-center gap-3">
+                        <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-teal-400 p-0.5 shadow-md shadow-blue-500/25 transition-transform duration-300 group-hover:scale-105">
+                            <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-slate-950/20 backdrop-blur-xs">
+                                <Activity className="h-5 w-5 text-white animate-pulse" />
+                            </div>
+                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500"></span>
+                            </span>
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold tracking-tight text-slate-900">
-                                BloodLens
-                            </h1>
-                            <p className="text-[11px] font-medium text-blue-600">
-                                AI Blood Report Analyzer
+                            <div className="flex items-center gap-1.5">
+                                <h1 className="text-lg font-black tracking-tight text-slate-900">
+                                    BloodLens
+                                </h1>
+                                <span className="rounded-full bg-blue-100/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-700">
+                                    AI
+                                </span>
+                            </div>
+                            <p className="text-[10px] font-semibold text-slate-400 tracking-wide">
+                                Clinical Report Intelligence
                             </p>
                         </div>
                     </Link>
 
                     {/* Nav Links */}
-                    <div className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-1 rounded-2xl bg-slate-100/70 p-1 border border-slate-200/60 backdrop-blur-sm">
                         <Link to="/upload" className={navLinkClass('/upload')}>
-                            <Upload className="h-4 w-4" />
+                            <Upload className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">Upload</span>
                         </Link>
 
                         <Link to="/dashboard" className={navLinkClass('/dashboard')}>
-                            <LayoutDashboard className="h-4 w-4" />
+                            <LayoutDashboard className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">Dashboard</span>
                         </Link>
 
                         <Link to="/history" className={navLinkClass('/history')}>
-                            <FolderClock className="h-4 w-4" />
-                            <span className="hidden md:inline">Reports</span>
+                            <FolderClock className="h-3.5 w-3.5" />
+                            <span className="hidden md:inline">Reports Vault</span>
                         </Link>
 
                         <Link to="/compare" className={navLinkClass('/compare')}>
-                            <GitCompare className="h-4 w-4" />
+                            <GitCompare className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">Compare</span>
                         </Link>
 
                         <Link to="/chat" className={navLinkClass('/chat')}>
-                            <MessageSquare className="h-4 w-4" />
-                            <span className="hidden md:inline">AI Chat</span>
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            <span className="hidden md:inline">AI Health Guide</span>
                         </Link>
                     </div>
 
@@ -138,14 +149,24 @@ function Navbar() {
                         {/* PII Privacy Toggle */}
                         <button
                             onClick={togglePrivacy}
-                            className={`p-2 rounded-xl border transition ${
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all duration-200 ${
                                 privacyMask
-                                    ? "bg-amber-50 text-amber-700 border-amber-200 shadow-2xs"
-                                    : "border-slate-200 text-slate-500 hover:bg-slate-50"
+                                    ? "bg-amber-50 text-amber-700 border-amber-300/80 shadow-xs"
+                                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                             }`}
-                            title={privacyMask ? "PII Masking is Active" : "Click to Mask Patient PII"}
+                            title={privacyMask ? "PII Masking is Active" : "Click to Mask Patient PII on Screen"}
                         >
-                            {privacyMask ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {privacyMask ? (
+                                <>
+                                    <EyeOff className="h-3.5 w-3.5 text-amber-600" />
+                                    <span className="hidden lg:inline">PII Masked</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Eye className="h-3.5 w-3.5 text-slate-400" />
+                                    <span className="hidden lg:inline text-slate-500">Privacy</span>
+                                </>
+                            )}
                         </button>
                         {user ? (
                             <div className="flex items-center gap-2">

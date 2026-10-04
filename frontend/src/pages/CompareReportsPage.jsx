@@ -144,27 +144,33 @@ export default function CompareReportsPage() {
   const headers = comparisonResult?.reportHeaders || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16">
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
+    <div className="min-h-screen bg-slate-50 mesh-gradient-bg pb-20">
+      {/* Ambient Glow Orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl animate-pulse-glow" />
+        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-teal-400/10 blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-8">
         
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-200/80 pb-6">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50/80 px-3.5 py-1 text-xs font-bold text-blue-700 shadow-2xs backdrop-blur-xs">
               <GitCompare className="h-3.5 w-3.5" />
-              Longitudinal Comparison
+              <span>Longitudinal Trajectory Engine</span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+            <h2 className="font-heading text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
               Compare Blood Reports Across Dates
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Track biomarker trajectories, observe trading-style trend graphs, detect lab unit differences, and view doctor consultation prompts.
+            <p className="mt-2 text-sm text-slate-500 max-w-2xl leading-relaxed">
+              Track biomarker trajectories, observe trading-style trend graphs with corridor reference bands, detect unit shifts, and view doctor consultation prompts.
             </p>
           </div>
 
           <Link
             to="/history"
-            className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs self-start sm:self-auto"
+            className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition shadow-2xs self-start sm:self-auto"
           >
             <span>View All Reports</span>
             <ArrowRight className="h-3.5 w-3.5" />

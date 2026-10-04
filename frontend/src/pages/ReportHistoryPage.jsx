@@ -152,21 +152,27 @@ export default function ReportHistoryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16">
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+    <div className="min-h-screen bg-slate-50 mesh-gradient-bg pb-20">
+      {/* Ambient Glow Orbs */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl animate-pulse-glow" />
+        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-teal-400/10 blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 py-8">
         
         {/* Header */}
-        <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end border-b border-slate-200 pb-6">
+        <div className="mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end border-b border-slate-200/80 pb-6">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
+            <div className="mb-2.5 inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-blue-50/80 px-3.5 py-1 text-xs font-bold text-blue-700 shadow-2xs backdrop-blur-xs">
               <FileText className="h-3.5 w-3.5" />
-              Document Vault
+              <span>Encrypted Document Vault</span>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-              Report History & Management
+            <h2 className="font-heading text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+              Report History & Vault
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Browse previously analyzed blood reports, view detailed dashboards, or compare changes across dates.
+            <p className="mt-2 text-sm text-slate-500 max-w-2xl leading-relaxed">
+              Browse previously analyzed blood reports, view detailed dashboards, compare changes across dates, or manage session storage.
             </p>
           </div>
 
@@ -267,8 +273,8 @@ export default function ReportHistoryPage() {
               return (
                 <div
                   key={report._id}
-                  className={`rounded-2xl border bg-white p-6 shadow-xs transition hover:shadow-md flex flex-col justify-between ${
-                    isActive ? "border-blue-400 ring-2 ring-blue-100" : "border-slate-200"
+                  className={`rounded-3xl border bg-white/95 backdrop-blur-sm p-6 shadow-xs transition-all duration-300 hover-lift flex flex-col justify-between ${
+                    isActive ? "border-blue-400 ring-4 ring-blue-100/70" : "border-slate-200/90"
                   }`}
                 >
                   <div>

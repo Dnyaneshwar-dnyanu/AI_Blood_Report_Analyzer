@@ -4,6 +4,7 @@ import {
   Upload,
   ShieldCheck,
   FileText,
+  Sparkles,
   CheckCircle2,
   Loader2,
   AlertCircle,

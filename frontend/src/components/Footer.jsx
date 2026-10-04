@@ -46,6 +46,7 @@ function Footer() {
           </div>
 
           <div className="flex items-center gap-4 text-xs font-semibold">
+            <Link to="/" className="hover:text-blue-600 transition">Home</Link>
             <Link to="/upload" className="hover:text-blue-600 transition">Upload</Link>
             <Link to="/dashboard" className="hover:text-blue-600 transition">Dashboard</Link>
             <Link to="/history" className="hover:text-blue-600 transition">Reports Vault</Link>

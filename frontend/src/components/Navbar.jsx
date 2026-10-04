@@ -12,7 +12,8 @@ import {
     FolderClock,
     GitCompare,
     Eye,
-    EyeOff
+    EyeOff,
+    Home
 } from 'lucide-react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
@@ -91,7 +92,7 @@ function Navbar() {
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
 
                     {/* Logo */}
-                    <Link to="/upload" className="group flex items-center gap-3">
+                    <Link to="/" className="group flex items-center gap-3">
                         <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-teal-400 p-0.5 shadow-md shadow-blue-500/25 transition-transform duration-300 group-hover:scale-105">
                             <div className="flex h-full w-full items-center justify-center rounded-[14px] bg-slate-950/20 backdrop-blur-xs">
                                 <Activity className="h-5 w-5 text-white animate-pulse" />
@@ -118,6 +119,11 @@ function Navbar() {
 
                     {/* Nav Links */}
                     <div className="flex items-center gap-1 rounded-2xl bg-slate-100/70 p-1 border border-slate-200/60 backdrop-blur-sm">
+                        <Link to="/" className={navLinkClass('/')}>
+                            <Home className="h-3.5 w-3.5" />
+                            <span className="hidden md:inline">Home</span>
+                        </Link>
+
                         <Link to="/upload" className={navLinkClass('/upload')}>
                             <Upload className="h-3.5 w-3.5" />
                             <span className="hidden md:inline">Upload</span>

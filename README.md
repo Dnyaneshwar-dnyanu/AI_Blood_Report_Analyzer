@@ -76,65 +76,7 @@
 
 ## 📐 System Architecture
 
-```mermaid
-flowchart TD
-    subgraph Client["🖥️ Frontend Client (React 19 + Vite + Tailwind CSS v4 + Recharts)"]
-        UI_Upload["Upload & Review (/upload)"]
-        UI_Dash["Executive Dashboard (/dashboard)"]
-        UI_Compare["Compare Reports Engine (/compare)"]
-        UI_Vault["Report Vault (/history)"]
-        UI_Chat["BloodLens Assistant (/chat)"]
-        UI_Drawer["RAG Term Explainer Drawer"]
-    end
-
-    subgraph API["⚙️ Backend Server (Node.js + Express 5)"]
-        Routes_Auth["/api/auth (JWT Auth)"]
-        Routes_Report["/api/report (CRUD, Compare, Guidance, Ingestion)"]
-        Routes_Chat["/api/chat (RAG Chat, History, Term Explainer)"]
-    end
-
-    subgraph Ingestion["📄 Document Processing & Uncertainty Pipeline"]
-        PDF["PDF Native Ingestion"]
-        OCR["Scribe.js OCR Engine"]
-        Extractor["Gemini Structured JSON Extraction"]
-        ReviewGate["Uncertainty & Confidence Review Gate"]
-    end
-
-    subgraph Comparison["📊 Longitudinal Comparison Engine"]
-        Normalizer["Biomarker Key Normalizer"]
-        DeltaEngine["Delta & Unit Shift Calculator"]
-        TrajectoryLLM["AI Trajectory & Clinical Insights"]
-    end
-
-    subgraph RAG_Engine["🧠 RAG & Medical Knowledge Layer"]
-        KB["Curated Medical Markdown Guides"]
-        Chunker["Semantic Markdown Chunker"]
-        Embedder["HuggingFace Local Embeddings (all-MiniLM-L6-v2)"]
-        VectorDB[("MongoDB Atlas $vectorSearch / Cosine Fallback")]
-        LLM["Google Gemini 3.6-flash (Auto-failover to 3.5-flash-lite)"]
-        Guardrails["Non-Diagnostic Medical Safety Guardrails"]
-    end
-
-    %% Wiring
-    UI_Upload --> Routes_Report
-    UI_Dash --> Routes_Report
-    UI_Compare --> Routes_Report
-    UI_Vault --> Routes_Report
-    UI_Chat --> Routes_Chat
-    UI_Drawer --> Routes_Chat
-
-    Routes_Report --> Ingestion
-    Ingestion --> PDF & OCR
-    PDF & OCR --> Extractor --> ReviewGate
-
-    Routes_Report --> Comparison
-    Comparison --> Normalizer --> DeltaEngine --> TrajectoryLLM
-
-    Routes_Chat --> RAG_Engine
-    KB --> Chunker --> Embedder --> VectorDB
-    VectorDB --> RAG_Engine
-    RAG_Engine --> LLM
-```
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/0ab63e5d-0e5c-40ec-8e8e-7035c5b15d4e" />
 
 ---
 
